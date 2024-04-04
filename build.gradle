@@ -1,0 +1,18 @@
+plugins {
+    id 'java'
+}
+
+group 'com.mvc'
+
+repositories {
+    mavenCentral()
+    maven {url "https://jitpack.io"}
+    maven { url "https://maven.seedfinding.com/" }
+    maven { url "https://maven-snapshots.seedfinding.com/" }
+    maven { url "https://maven.latticg.com/" }
+}
+
+dependencies {
+    implementation('com.github.hube12:SEED:master-SNAPSHOT')
+    implementation('com.github.jellejurre:seed-checker:1.0.0-1.16.1'){transitive=false}
+}
