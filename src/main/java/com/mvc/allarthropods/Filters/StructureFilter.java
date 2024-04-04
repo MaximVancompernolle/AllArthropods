@@ -1,25 +1,22 @@
 package com.mvc.allarthropods.Filters;
 
 import com.mvc.allarthropods.Config;
-import com.seedfinding.mcbiome.source.OverworldBiomeSource;
 import com.seedfinding.mccore.rand.ChunkRand;
 import com.seedfinding.mccore.util.pos.CPos;
 import com.seedfinding.mccore.util.pos.RPos;
-import com.seedfinding.mcfeature.structure.Mansion;
-import com.seedfinding.mcterrain.terrain.OverworldTerrainGenerator;
+import util.mansionSim.Mansion;
+import util.mansionSim.MansionGenerator;
+import util.mansionSim.MansionPiece;
 
 public class StructureFilter {
     private final long structureSeed;
     private final ChunkRand chunkRand;
     public Mansion wm = new Mansion(Config.VERSION);
-    public OverworldBiomeSource owBiomeSource;
-    public OverworldTerrainGenerator owTerrainGen;
+    public MansionGenerator wmGenerator = new MansionGenerator(Config.VERSION);
 
     public StructureFilter(long structureSeed, ChunkRand chunkRand) {
         this.structureSeed = structureSeed;
         this.chunkRand = chunkRand;
-        this.owBiomeSource = new OverworldBiomeSource(Config.VERSION, structureSeed);
-        this.owTerrainGen = new OverworldTerrainGenerator(this.owBiomeSource);
     }
 
     public boolean filterStructures() {
@@ -35,11 +32,15 @@ public class StructureFilter {
             for (RPos wmRegion : rowOfWmRegions) {
                 CPos wmLocation = wm.getInRegion(structureSeed, wmRegion.getX(), wmRegion.getZ(), chunkRand);
 
-                if (wmLocation == null) {
+                if ((wmLocation == null) || (wmLocation.getMagnitudeSq() >= Config.WM_MAX_DIST)) {
                     continue;
                 }
-                if (wmLocation.getMagnitudeSq() <= Config.WM_MAX_DIST) {
-                    return true;
+                wmGenerator.fastGenerate(structureSeed, wmLocation.getX(), wmLocation.getZ(), chunkRand);
+
+                for (MansionPiece wmPiece : wmGenerator.getPieces()) {
+                    if (wmPiece.getTemplate().contains("1x2_s2")) {
+                        return true;
+                    }
                 }
             }
         }
