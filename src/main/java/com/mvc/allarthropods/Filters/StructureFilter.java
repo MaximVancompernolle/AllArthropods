@@ -1,36 +1,50 @@
 package com.mvc.allarthropods.Filters;
 
 import com.mvc.allarthropods.Config;
-import com.seedfinding.mcbiome.source.OverworldBiomeSource;
 import com.seedfinding.mccore.rand.ChunkRand;
+import com.seedfinding.mccore.state.Dimension;
+import com.seedfinding.mccore.util.math.DistanceMetric;
 import com.seedfinding.mccore.util.pos.CPos;
-import com.seedfinding.mcterrain.terrain.OverworldTerrainGenerator;
+import com.seedfinding.mcfeature.loot.ChestContent;
+import com.seedfinding.mcfeature.loot.item.ItemStack;
+import com.seedfinding.mcfeature.loot.item.Items;
+import com.seedfinding.mcfeature.structure.RuinedPortal;
+import com.seedfinding.mcfeature.structure.generator.structure.RuinedPortalGenerator;
 import util.mansionSim.Mansion;
 import util.mansionSim.MansionGenerator;
 import util.mansionSim.MansionPiece;
 
+import java.util.List;
+
 public class StructureFilter {
     private final long structureSeed;
     private final ChunkRand chunkRand;
-    public Mansion wm = new Mansion(Config.VERSION);
-    public MansionGenerator wmGenerator = new MansionGenerator(Config.VERSION);
-    public OverworldBiomeSource owBiomeSource;
-    public OverworldTerrainGenerator owTerrainGen;
 
     public StructureFilter(long structureSeed, ChunkRand chunkRand) {
         this.structureSeed = structureSeed;
         this.chunkRand = chunkRand;
-        this.owBiomeSource = new OverworldBiomeSource(Config.VERSION, structureSeed);
-        this.owTerrainGen = new OverworldTerrainGenerator(owBiomeSource);
     }
 
     public boolean filterStructures() {
-        CPos wmLocation = wm.getInRegion(structureSeed, 0, 0, chunkRand);
+        RuinedPortal rp = new RuinedPortal(Dimension.OVERWORLD, Config.VERSION);
+        CPos rpLocation = rp.getInRegion(structureSeed, 0, 0, chunkRand);
 
-        if (wmLocation.getX() > Config.WM_MAX_DIST || wmLocation.getZ() > Config.WM_MAX_DIST) {
+        if (rpLocation.getMagnitudeSq() > Config.RP_MAX_DIST) {
             return false;
         }
 
+        if (!hasRpLoot(rpLocation, rp)) {
+            return false;
+        }
+
+        Mansion wm = new Mansion(Config.VERSION);
+        CPos wmLocation = wm.getInRegion(structureSeed, 0, 0, chunkRand);
+
+        if (wmLocation.distanceTo(rpLocation, DistanceMetric.EUCLIDEAN_SQ) > Config.WM_MAX_DIST) {
+            return false;
+        }
+
+        MansionGenerator wmGenerator = new MansionGenerator(Config.VERSION);
         wmGenerator.fastGenerate(structureSeed, wmLocation.getX(), wmLocation.getZ(), chunkRand);
         boolean hasFakeEndPortalRoom = false;
 
@@ -41,5 +55,29 @@ public class StructureFilter {
             }
         }
         return hasFakeEndPortalRoom;
+    }
+
+    public boolean hasRpLoot(CPos rpLocation, RuinedPortal rp) {
+        RuinedPortalGenerator rpGenerator = new RuinedPortalGenerator(Config.VERSION);
+        rpGenerator.generate(structureSeed, Dimension.OVERWORLD, rpLocation.getX(), rpLocation.getZ());
+        List<ChestContent> loot = rp.getLoot(structureSeed, rpGenerator, chunkRand, false);
+
+        if (loot.isEmpty()) {
+            return false;
+        }
+
+        for (ChestContent chest : loot) {
+            if (!chest.contains(Items.GOLDEN_AXE)) {
+                return false;
+            }
+
+            for (ItemStack stack : chest.getItems()) {
+                if (!stack.getItem().equals(Items.GOLDEN_AXE)) {
+                    continue;
+                }
+                return true;
+            }
+        }
+        return false;
     }
 }
