@@ -2,15 +2,9 @@ package com.mvc.allarthropods;
 
 import com.mvc.allarthropods.Filters.StructureFilter;
 import com.seedfinding.mccore.rand.ChunkRand;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import nl.jellejurre.seedchecker.SeedChecker;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
