@@ -3,7 +3,6 @@ package com.mvc.allarthropods;
 import com.seedfinding.mccore.version.MCVersion;
 
 public class Config {
-    public static final int THREADS = 12;
     public static final int SEED_MATCHES = 10;
     public static final int LOG_DELAY = 10_000;
     public static final MCVersion VERSION = MCVersion.v1_16_1;
