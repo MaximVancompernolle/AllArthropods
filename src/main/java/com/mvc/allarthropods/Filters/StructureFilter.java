@@ -59,7 +59,9 @@ public class StructureFilter {
 
     public boolean hasRpLoot(CPos rpLocation, RuinedPortal rp) {
         RuinedPortalGenerator rpGenerator = new RuinedPortalGenerator(Config.VERSION);
-        rpGenerator.generate(structureSeed, Dimension.OVERWORLD, rpLocation.getX(), rpLocation.getZ());
+        if(!rpGenerator.generate(structureSeed, Dimension.OVERWORLD, rpLocation.getX(), rpLocation.getZ())) {
+            return false;
+        }
         List<ChestContent> loot = rp.getLoot(structureSeed, rpGenerator, chunkRand, false);
 
         if (loot.isEmpty()) {
