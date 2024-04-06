@@ -6,12 +6,12 @@ import com.seedfinding.mccore.state.Dimension;
 import com.seedfinding.mccore.util.data.Pair;
 import com.seedfinding.mccore.util.math.DistanceMetric;
 import com.seedfinding.mccore.util.pos.CPos;
-import com.seedfinding.mcfeature.loot.ChestContent;
+import com.seedfinding.mcfeature.loot.LootContext;
+import com.seedfinding.mcfeature.loot.LootTable;
+import com.seedfinding.mcfeature.loot.MCLootTables;
 import com.seedfinding.mcfeature.loot.item.Item;
 import com.seedfinding.mcfeature.loot.item.ItemStack;
-import com.seedfinding.mcfeature.loot.item.Items;
 import com.seedfinding.mcfeature.structure.RuinedPortal;
-import com.seedfinding.mcfeature.structure.generator.structure.RuinedPortalGenerator;
 import util.mansionSim.Mansion;
 import util.mansionSim.MansionGenerator;
 import util.mansionSim.MansionPiece;
@@ -31,6 +31,11 @@ public class StructureFilter {
         RuinedPortal rp = new RuinedPortal(Dimension.OVERWORLD, Config.VERSION);
         CPos rpLocation = rp.getInRegion(structureSeed, 0, 0, chunkRand);
 
+        chunkRand.setCarverSeed(structureSeed, rpLocation.getX(), rpLocation.getZ(), Config.VERSION);
+        if (chunkRand.nextFloat() < 0.50F) {
+            return false;
+        }
+
         if (rpLocation.getMagnitudeSq() > Config.RP_MAX_DIST) {
             return false;
         }
@@ -42,7 +47,7 @@ public class StructureFilter {
             return false;
         }
 
-        if (!hasRpLoot(rpLocation, rp)) {
+        if (!hasRpLoot(rpLocation)) {
             return false;
         }
 
@@ -59,40 +64,35 @@ public class StructureFilter {
         return hasFakeEndPortalRoom;
     }
 
-    public boolean hasRpLoot(CPos rpLocation, RuinedPortal rp) {
-        RuinedPortalGenerator rpGenerator = new RuinedPortalGenerator(Config.VERSION);
-        if(!rpGenerator.generate(structureSeed, Dimension.OVERWORLD, rpLocation.getX(), rpLocation.getZ())) {
+    public boolean hasRpLoot(CPos rpLocation) {
+        chunkRand.setDecoratorSeed(structureSeed, rpLocation.getX() << 4, rpLocation.getZ() << 4, 40005, Config.VERSION);
+        LootContext lootContext = new LootContext(chunkRand.nextLong(), Config.VERSION);
+        LootTable lootTable = MCLootTables.RUINED_PORTAL_CHEST.get();
+        lootTable.apply(Config.VERSION);
+        List<ItemStack> items = lootTable.generate(lootContext);
+
+        if (items.isEmpty()) {
             return false;
         }
-        List<ChestContent> loot = rp.getLoot(structureSeed, rpGenerator, chunkRand, false);
 
-        if (loot.isEmpty()) {
-            return false;
-        }
+        for (ItemStack stack : items) {
+            Item item = stack.getItem();
+            int weaponType = switch (item.getName()) {
+                case "golden_sword" -> 2;
+                case "golden_axe" -> 1;
+                default -> 0;
+            };
 
-        for (ChestContent chest : loot) {
-            if (!(chest.contains(Items.GOLDEN_AXE) || chest.contains(Items.GOLDEN_SWORD))) {
+            if (weaponType == 0) {
                 return false;
             }
 
-            for (ItemStack stack : chest.getItems()) {
-                Item item = stack.getItem();
-                int weaponType = switch (item.getName()) {
-                    case "golden_sword" -> 2;
-                    case "golden_axe" -> 1;
-                    default -> 0;
-                };
+            for (Pair<String, Integer> enchantment : item.getEnchantments()) {
+                String enchantmentName = enchantment.getFirst();
+                Integer enchantmentLevel = enchantment.getSecond();
 
-                if (weaponType == 0) {
-                    return false;
-                }
-                for (Pair<String, Integer> enchantment : item.getEnchantments()) {
-                    String enchantmentName = enchantment.getFirst();
-                    Integer enchantmentLevel = enchantment.getSecond();
-
-                    if (enchantmentName.equals("bane_of_arthropods")) {
-                        return enchantmentLevel - weaponType >= 2;
-                    }
+                if (enchantmentName.equals("bane_of_arthropods")) {
+                    return enchantmentLevel - weaponType >= 2;
                 }
             }
         }
