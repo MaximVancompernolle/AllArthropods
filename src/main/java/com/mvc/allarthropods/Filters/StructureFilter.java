@@ -30,8 +30,8 @@ public class StructureFilter {
     public boolean filterStructures() {
         RuinedPortal rp = new RuinedPortal(Dimension.OVERWORLD, Config.VERSION);
         CPos rpLocation = rp.getInRegion(structureSeed, 0, 0, chunkRand);
-
         chunkRand.setCarverSeed(structureSeed, rpLocation.getX(), rpLocation.getZ(), Config.VERSION);
+
         if (chunkRand.nextFloat() < 0.50F) {
             return false;
         }
@@ -43,25 +43,20 @@ public class StructureFilter {
         Mansion wm = new Mansion(Config.VERSION);
         CPos wmLocation = wm.getInRegion(structureSeed, 0, 0, chunkRand);
 
-        if (wmLocation.distanceTo(rpLocation, DistanceMetric.EUCLIDEAN_SQ) > Config.WM_MAX_DIST) {
-            return false;
-        }
-
-        if (!hasRpLoot(rpLocation)) {
-            return false;
-        }
-
         MansionGenerator wmGenerator = new MansionGenerator(Config.VERSION);
         wmGenerator.fastGenerate(structureSeed, wmLocation.getX(), wmLocation.getZ(), chunkRand);
         boolean hasFakeEndPortalRoom = false;
 
         for (MansionPiece wmPiece : wmGenerator.getPieces()) {
             if (wmPiece.getTemplate().contains("1x2_s2")) {
+                if (wmPiece.getPos().toChunkPos().distanceTo(rpLocation, DistanceMetric.EUCLIDEAN_SQ) > Config.WM_MAX_DIST) {
+                    continue;
+                }
                 hasFakeEndPortalRoom = true;
                 break;
             }
         }
-        return hasFakeEndPortalRoom;
+        return hasFakeEndPortalRoom && hasRpLoot(rpLocation);
     }
 
     public boolean hasRpLoot(CPos rpLocation) {
