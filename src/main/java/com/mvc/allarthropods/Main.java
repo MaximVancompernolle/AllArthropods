@@ -13,7 +13,7 @@ public class Main {
         final ChunkRand chunkRand = new ChunkRand();
         System.out.println("Starting seed finding...");
         FileWriter output = new FileWriter("./output.txt");
-        int seedsChecked = 0;
+        long seedsChecked = 0;
         int seedMatches = 0;
         long nextTime = 0;
         long currentTime;
