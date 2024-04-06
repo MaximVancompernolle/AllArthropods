@@ -46,13 +46,6 @@ public class StructureFilter {
             return false;
         }
 
-        Mansion wm = new Mansion(Config.VERSION);
-        CPos wmLocation = wm.getInRegion(structureSeed, 0, 0, chunkRand);
-
-        if (wmLocation.distanceTo(rpLocation, DistanceMetric.EUCLIDEAN_SQ) > Config.WM_MAX_DIST) {
-            return false;
-        }
-
         MansionGenerator wmGenerator = new MansionGenerator(Config.VERSION);
         wmGenerator.fastGenerate(structureSeed, wmLocation.getX(), wmLocation.getZ(), chunkRand);
         boolean hasFakeEndPortalRoom = false;
