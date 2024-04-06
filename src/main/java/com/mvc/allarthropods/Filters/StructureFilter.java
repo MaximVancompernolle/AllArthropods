@@ -3,9 +3,11 @@ package com.mvc.allarthropods.Filters;
 import com.mvc.allarthropods.Config;
 import com.seedfinding.mccore.rand.ChunkRand;
 import com.seedfinding.mccore.state.Dimension;
+import com.seedfinding.mccore.util.data.Pair;
 import com.seedfinding.mccore.util.math.DistanceMetric;
 import com.seedfinding.mccore.util.pos.CPos;
 import com.seedfinding.mcfeature.loot.ChestContent;
+import com.seedfinding.mcfeature.loot.item.Item;
 import com.seedfinding.mcfeature.loot.item.ItemStack;
 import com.seedfinding.mcfeature.loot.item.Items;
 import com.seedfinding.mcfeature.structure.RuinedPortal;
@@ -30,6 +32,13 @@ public class StructureFilter {
         CPos rpLocation = rp.getInRegion(structureSeed, 0, 0, chunkRand);
 
         if (rpLocation.getMagnitudeSq() > Config.RP_MAX_DIST) {
+            return false;
+        }
+
+        Mansion wm = new Mansion(Config.VERSION);
+        CPos wmLocation = wm.getInRegion(structureSeed, 0, 0, chunkRand);
+
+        if (wmLocation.distanceTo(rpLocation, DistanceMetric.EUCLIDEAN_SQ) > Config.WM_MAX_DIST) {
             return false;
         }
 
@@ -69,15 +78,29 @@ public class StructureFilter {
         }
 
         for (ChestContent chest : loot) {
-            if (!chest.contains(Items.GOLDEN_AXE)) {
+            if (!(chest.contains(Items.GOLDEN_AXE) || chest.contains(Items.GOLDEN_SWORD))) {
                 return false;
             }
 
             for (ItemStack stack : chest.getItems()) {
-                if (!stack.getItem().equals(Items.GOLDEN_AXE)) {
-                    continue;
+                Item item = stack.getItem();
+                int weaponType = switch (item.getName()) {
+                    case "golden_sword" -> 2;
+                    case "golden_axe" -> 1;
+                    default -> 0;
+                };
+
+                if (weaponType == 0) {
+                    return false;
                 }
-                return true;
+                for (Pair<String, Integer> enchantment : item.getEnchantments()) {
+                    String enchantmentName = enchantment.getFirst();
+                    Integer enchantmentLevel = enchantment.getSecond();
+
+                    if (enchantmentName.equals("bane_of_arthropods")) {
+                        return enchantmentLevel - weaponType >= 2;
+                    }
+                }
             }
         }
         return false;
