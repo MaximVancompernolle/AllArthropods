@@ -69,6 +69,9 @@ public class StructureFilter {
         if (items.isEmpty()) {
             return false;
         }
+        boolean hasPickaxe = false;
+        boolean hasAxe = false;
+        boolean hasBane = false;
 
         for (ItemStack stack : items) {
             Item item = stack.getItem();
@@ -78,8 +81,16 @@ public class StructureFilter {
                 default -> 0;
             };
 
-            if (weaponType == 0) {
-                return false;
+            if (!hasPickaxe && item.getName().equals("golden_pickaxe")) {
+                hasPickaxe = true;
+            }
+
+            if (!hasAxe && weaponType == 1) {
+                hasAxe = true;
+            }
+
+            if (weaponType == 0 || hasBane) {
+                continue;
             }
 
             for (Pair<String, Integer> enchantment : item.getEnchantments()) {
@@ -87,10 +98,13 @@ public class StructureFilter {
                 Integer enchantmentLevel = enchantment.getSecond();
 
                 if (enchantmentName.equals("bane_of_arthropods")) {
-                    return enchantmentLevel - weaponType >= 2;
+                    if (enchantmentLevel - weaponType >= 2) {
+                        hasBane = true;
+                        break;
+                    }
                 }
             }
         }
-        return false;
+        return hasPickaxe && hasAxe && hasBane;
     }
 }
