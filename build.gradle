@@ -15,4 +15,5 @@ repositories {
 dependencies {
     implementation('com.github.hube12:SEED:master-SNAPSHOT')
     implementation('com.github.jellejurre:seed-checker:1.0.0-1.16.1'){transitive=false}
+    implementation('com.github.Kludwisz:MineshaftLoot:main-SNAPSHOT')
 }

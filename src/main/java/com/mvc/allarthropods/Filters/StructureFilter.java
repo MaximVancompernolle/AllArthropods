@@ -12,10 +12,13 @@ import com.seedfinding.mcfeature.loot.MCLootTables;
 import com.seedfinding.mcfeature.loot.item.Item;
 import com.seedfinding.mcfeature.loot.item.ItemStack;
 import com.seedfinding.mcfeature.structure.RuinedPortal;
+import kludwisz.mineshafts.Corridor;
+import kludwisz.mineshafts.MineshaftGenerator;
 import util.mansionSim.Mansion;
 import util.mansionSim.MansionGenerator;
 import util.mansionSim.MansionPiece;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class StructureFilter {
@@ -46,17 +49,54 @@ public class StructureFilter {
         MansionGenerator wmGenerator = new MansionGenerator(Config.VERSION);
         wmGenerator.fastGenerate(structureSeed, wmLocation.getX(), wmLocation.getZ(), chunkRand);
         boolean hasFakeEndPortalRoom = false;
+        CPos fakeEndPortalRoomPos = null;
 
         for (MansionPiece wmPiece : wmGenerator.getPieces()) {
-            if (wmPiece.getTemplate().contains("1x2_s2")) {
-                if (wmPiece.getPos().toChunkPos().distanceTo(rpLocation, DistanceMetric.EUCLIDEAN_SQ) > Config.WM_MAX_DIST) {
-                    continue;
-                }
+            if (!wmPiece.getTemplate().contains("1x2_s2")) {
+                continue;
+            }
+            fakeEndPortalRoomPos = wmPiece.getPos().toChunkPos();
+
+            if (fakeEndPortalRoomPos.distanceTo(rpLocation, DistanceMetric.EUCLIDEAN_SQ) < Config.WM_MAX_DIST) {
                 hasFakeEndPortalRoom = true;
                 break;
             }
         }
-        return hasFakeEndPortalRoom && hasRpLoot(rpLocation);
+
+        if (!hasFakeEndPortalRoom) {
+            return false;
+        }
+
+        ArrayList<Corridor> corridorArrayList;
+        boolean hasSpawner = false;
+
+        mineshaftLoop:
+        for (int x = -8; x < 8; x++) {
+            for (int z = -8; z < 8; z++) {
+                corridorArrayList = new ArrayList<>();
+                MineshaftGenerator.generateForChunk(structureSeed, fakeEndPortalRoomPos.getX() + x, fakeEndPortalRoomPos.getZ() + z, false, corridorArrayList);
+
+                if (corridorArrayList.isEmpty()) {
+                    continue;
+                }
+                for (Corridor corridor : corridorArrayList) {
+                    if (!corridor.hasCobwebs) {
+                        continue;
+                    }
+
+                    if (corridor.bb.minY < 20) {
+                        continue;
+                    }
+                    CPos corridorPos = new CPos(corridor.bb.maxX >> 4, corridor.bb.maxZ >> 4);
+
+                    if (corridorPos.distanceTo(fakeEndPortalRoomPos, DistanceMetric.EUCLIDEAN_SQ) < Config.MS_MAX_DIST) {
+                        hasSpawner = true;
+                        break mineshaftLoop;
+                    }
+                }
+            }
+        }
+        return hasSpawner && hasRpLoot(rpLocation);
     }
 
     public boolean hasRpLoot(CPos rpLocation) {
