@@ -3,7 +3,6 @@ package com.mvc.allarthropods.Filters;
 import com.mvc.allarthropods.Config;
 import com.seedfinding.mccore.rand.ChunkRand;
 import com.seedfinding.mccore.state.Dimension;
-import com.seedfinding.mccore.util.data.Pair;
 import com.seedfinding.mccore.util.math.DistanceMetric;
 import com.seedfinding.mccore.util.pos.CPos;
 import com.seedfinding.mcfeature.loot.LootContext;
@@ -111,40 +110,18 @@ public class StructureFilter {
         }
         boolean hasPickaxe = false;
         boolean hasAxe = false;
-        boolean hasBane = false;
 
         for (ItemStack stack : items) {
             Item item = stack.getItem();
-            int weaponType = switch (item.getName()) {
-                case "golden_sword" -> 2;
-                case "golden_axe" -> 1;
-                default -> 0;
-            };
 
             if (!hasPickaxe && item.getName().equals("golden_pickaxe")) {
                 hasPickaxe = true;
-            }
-
-            if (!hasAxe && weaponType == 1) {
-                hasAxe = true;
-            }
-
-            if (weaponType == 0 || hasBane) {
                 continue;
             }
-
-            for (Pair<String, Integer> enchantment : item.getEnchantments()) {
-                String enchantmentName = enchantment.getFirst();
-                Integer enchantmentLevel = enchantment.getSecond();
-
-                if (enchantmentName.equals("bane_of_arthropods")) {
-                    if (enchantmentLevel - weaponType >= 2) {
-                        hasBane = true;
-                        break;
-                    }
-                }
+            if (!hasAxe && item.getName().equals("golden_axe")) {
+                hasAxe = true;
             }
         }
-        return hasPickaxe && hasAxe && hasBane;
+        return hasPickaxe && hasAxe;
     }
 }
